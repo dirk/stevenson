@@ -1,56 +1,79 @@
 module Stevenson
   class Server
-    attr_reader :app
+    attr_reader :app, :static_paths
+    attr_accessor :run
+    
     def response; @response; end
     def request;  @request;  end
     
+    # Sets up the server.
     def initialize(application)
       # Will take an application and start serving pages from it.
       @app = application
+      @run = run
       @static_paths = []
+      
+      if @app.opts[:run]
+        puts "- Stevenson is writing a novel on port 3000 with ghost author #{@app.opts[:handler]}"
+        
+        builder = Rack::Builder.new
+        builder.use Rack::CommonLogger
+        builder.run self
+        @app.opts[:handler].run(
+          builder.to_app,
+          :Port => 3000
+        )
+        #@app.opts[:handler].run(
+        #  self,
+        #  :Port => 3000
+        #)
+        # From Sinatra, for reference:
+        # handler.run self, :Host => bind, :Port => port do |server|
+        #  [:INT, :TERM].each { |sig| trap(sig) { quit!(server, handler_name) } }
+        #  set :running, true
+        # end
+      else
+        puts "- Stevenson thinks he's writing a novel with the publisher Rack"
+      end
     end
-    # Stubbing out some rackety-Racks.
+    
+    # Rack interaction.
     def call(env)
       @request = Rack::Request.new(env)
       @response = Rack::Response.new()
       
       resp = route
+      # Failsafe in case the routing layer dies.
       if resp.nil?
-        final = [500, {}, ['Woops! Error serving file.']]
+        [500, {}, ['Woops! Error serving file.']]
       else
-        # 127.0.0.1 - - [22/Nov/2010 06:50:50] "GET / HTTP/1.1" 200 1205 0.0096
-=begin
-{"HTTP_HOST"=>"localhost:3000",
-"SERVER_NAME"=>"localhost",
-"REQUEST_PATH"=>"/test.txt",
-"HTTP_USER_AGENT"=>"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:2.0b7) Gecko/20100101 Firefox/4.0b7",
-"HTTP_KEEP_ALIVE"=>"115",
-"SERVER_PROTOCOL"=>"HTTP/1.1",
-"SERVER_SOFTWARE"=>"Mongrel 1.1.5",
-"PATH_INFO"=>"/test.txt",
-"REMOTE_ADDR"=>"127.0.0.1",
-"SCRIPT_NAME"=>"",
-"HTTP_VERSION"=>"HTTP/1.1",
-"REQUEST_URI"=>"/test.txt",
-"SERVER_PORT"=>"3000",
-"REQUEST_METHOD"=>"GET",
-"QUERY_STRING"=>"",
-"HTTP_ACCEPT_ENCODING"=>"gzip, deflate",
-"HTTP_CONNECTION"=>"keep-alive",
-=end
-        final = resp.to_a
+        resp.to_a
+      end
+    end
+    
+    # Determines whether it's a page or a static file.
+    def route
+      if @app.routes.keys.include? request.path_info
+        response['Content-Type'] = 'text/html'
+        response.write @app.routes[request.path_info].call
+        return response
       end
       
-      puts "#{env['HTTP_HOST']} (#{Time.now.getutc}) #{env['REQUEST_METHOD']} #{env['REQUEST_URI']} #{final.first.to_s}"
-      return final
-    end
-    def route
       path = File.expand_path('public' + Rack::Utils.unescape(request.path_info))
       return static!(path) if static?(path)
       
       return not_found
     end
     
+    # Determine the mimetype with help from Rack. Lifted from sinatra/base.rb line 938
+    def mime_type(type, value=nil)
+      return type if type.nil? || type.to_s.include?('/')
+      type = ".#{type}" unless type.to_s[0] == ?.
+      return Rack::Mime.mime_type(type, nil) unless value
+      Rack::Mime::MIME_TYPES[type] = value
+    end
+    
+    # Check if the given path goes to a static file. Contains in-memory caching layer.
     def static? path
       # Maintain cache of files already known to be static for performance.
       return true if @static_paths.include? path
@@ -58,12 +81,14 @@ module Stevenson
       return true if File.file? path
     end
     
+    # Serve a static asset.
     def static! path
-      # Serving a static asset.
       length  = File.stat(path).size
       content = File.read(path) {|f| f.read }
+      type    = mime_type(File.extname(path))
       
       response['Content-Length'] = length.to_s
+      response['Content-Type'] = type
       response.write(content)
       
       response
@@ -73,6 +98,7 @@ module Stevenson
       puts e.inspect # DEBUG
     end
     
+    # Send a 404 response with a handy 'Not Found' message.
     def not_found
       response.status = 404
       response.write 'Not Found'

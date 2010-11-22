@@ -1,12 +1,15 @@
+# Standalone test server for Stevenson. Change ":run => true" to
+# ":run => false" and call `rackup config.ru` to run it through
+# Rack on the front-end instead of on the back-end.
+
 require 'rubygems'
 require '../lib/stevenson'
 
-# Run this until it doesn't throw an error.
-
-puts (pen do
+pen :run => true do
   collection :people do
-    page :jane
     page :john
   end
   page :about
-end).inspect
+end
+
+# Currently makes routes to "/about" and "/people/john".

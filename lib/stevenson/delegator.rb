@@ -1,5 +1,9 @@
 module Stevenson
   module Delegator
+    def pen(*args, &block)
+      ::Stevenson::Application.pen(*args, &block)
+    end
+=begin
     # Lifted from Sinatra. Only need it to throw the :pen method into the current scope (look at lib/stevenson.rb).
     def self.delegate(*methods)
       methods.each do |method_name|
@@ -13,5 +17,6 @@ module Stevenson
     end
 
     delegate :pen
+=end
   end
 end

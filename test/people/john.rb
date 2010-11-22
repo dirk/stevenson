@@ -1,0 +1,1 @@
+content :layout => layout('default.erb'), :erb => file('john_smith.erb')
