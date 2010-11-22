@@ -1,0 +1,3 @@
+h2. What is Stevenson?
+
+Stevenson is the fusion of jekyll and Sinatra. It's currently being developed as a replacement for the hackety-hax system running Colonial, the repository for the Charleston Ruby User Group. It's named after Robert Louis Stevenson, the author of _Strange Case of Dr Jekyll and Mr Hyde_.
