@@ -1,5 +1,5 @@
 require 'rubygems'
-require './lib/stevenson'
+require '../lib/stevenson'
 
 # Run this until it doesn't throw an error.
 

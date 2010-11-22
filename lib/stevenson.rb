@@ -1,5 +1,6 @@
 require 'sinatra/base'
 require 'haml'
+require 'rack'
 
 module Stevenson
   LIB_PATH = File.dirname(__FILE__)
