@@ -1,3 +1,15 @@
 h2. What is Stevenson?
 
-Stevenson is the fusion of jekyll and Sinatra. It's currently being developed as a replacement for the hackety-hax system running Colonial, the repository for the Charleston Ruby User Group. It's named after Robert Louis Stevenson, the author of _Strange Case of Dr Jekyll and Mr Hyde_.
+Stevenson is the fusion of "jekyll":https://github.com/mojombo/jekyll and "Sinatra":https://github.com/sinatra/sinatra. It's currently being developed as a replacement for the hackety-hax system running "Colonial":https;//github.com/dirk/colonial, the repository for the "Charleston Ruby User Group":http://charlestonruby.org/. It's named after Robert Louis Stevenson, the author of _Strange Case of Dr Jekyll and Mr Hyde_, in homage to the aforementioned @jekyll@ library.
+
+h2. How does it work?
+
+The current vision is for Stevenson to truly be a fusion of @jekyll@ and @sinatra@. It will provide a DSL to define (semi-)static pages that can be run through a variety of processors (Textile, HAML, ERb, etc.) as well as a basic layout system (likely not as full-featured as @sinatra@ or @rails@). At it's core it's just a @jekyll@-like system with magic Ruby powers available instead of being stuck in just templates and YAML files.
+
+h2. What can I do/how do I start?
+
+I'm going to go ahead an assume you know what you're doing with Ruby, Rubygems, git, and GitHub. Go ahead and fork your own copy, then clone that down to your local machine. The best place to start will be in the @test@ directory. While I'm not using a full-featured testing framework at this point, it is set up so that you can run:
+
+bc. ruby test/app.rb
+
+That will attempt to run a basic Stevenson application and spew out the results of the attempt. Most of the time I will have already thrown in a bunch of not-yet-implemented-features into files in the test directory, so it should be pretty easy to figure out stuff to work on from the copious list of errors you'll get. Feel free to file issues, pull requests, or send me messages.
