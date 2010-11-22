@@ -47,6 +47,7 @@ module Stevenson
     
     # DSL method to define a page.
     def page(name, opts = {}, block = Proc.new {})
+      # TODO: Make this a little bit prettier.
       puts '+ Page: ' + @current_collection.to_s + '/' + name.to_s
       @routes[((@current_collection == :root) ? '/' : ('/' + @current_collection.to_s + '/')) + name.to_s] = \
         ((@collections[@current_collection] ||= []) << Page.new(name, opts.merge({:collection => @current_collection}), &block)).last
