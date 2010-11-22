@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{stevenson}
-  s.version = "0.2.0"
+  s.version = "0.3.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Dirk Gadsden"]
@@ -36,7 +36,9 @@ Gem::Specification.new do |s|
   s.summary = %q{}
   s.test_files = [
     "test/about.rb",
-    "test/app.rb"
+    "test/app.rb",
+    "test/people/john.rb",
+    "test/sinatra_test_app.rb"
   ]
 
   if s.respond_to? :specification_version then
