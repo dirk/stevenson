@@ -1,1 +1,3 @@
-content :layout => layout('default.erb'), :erb => file('john_smith.erb')
+layout file('default.erb')
+
+content file('people/john_smith.erb')
