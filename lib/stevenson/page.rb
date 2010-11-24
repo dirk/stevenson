@@ -41,12 +41,14 @@ module Stevenson
     end
     
     # Self-explanatory; takes either a Templates::File, Templates::String, or any other object that responds to to_s.
-    def render(data)
+    def render(data, sub = nil)
       if data.is_a? Templates::File or data.is_a? Templates::String
         if data.format == :erb
-          return ERB.new(data.content).result binding
+          p = sub ? Proc.new { render(sub) } : Proc.new { }
+          return render_erb(data.content, &p)
         elsif data.format == :haml
-          return Haml::Engine.new(data.content).render self
+          p = sub ? Proc.new { render(sub) } : Proc.new { }
+          return Haml::Engine.new(data.content).render(self, {}, &p)
         else
           data.content
         end
@@ -54,6 +56,9 @@ module Stevenson
         # Otherwise we'll treat it as a simple string.
         return data.to_s
       end
+    end
+    def render_erb(content, &block)
+      return ERB.new(content).result binding
     end
     
     def call
@@ -95,7 +100,7 @@ module Stevenson
       
       # Abstracts a file into standardized attributes: path, format, and content.
       class File
-        attr_accessor :path, :format, :content, :original_path
+        attr_accessor :path, :format, :original_path
         
         def self.prefix(prefix, old)
           self.new(prefix + old.original_path, old.format)
@@ -115,8 +120,12 @@ module Stevenson
           
           @original_path = path
           @path = ::File.expand_path('./') + (path.slice(0,1) === '/' ? '' : '/') + path
+        end
+        def content
           if ::File.file?(path)
-            @content = ::File.read(path) {|f| f.read }
+            @content ||= ::File.read(path) {|f| f.read }
+          else
+            ''
           end
         end
       end
@@ -152,7 +161,7 @@ module Stevenson
       if args.first === false
         @content = ''
       elsif args.first.is_a? Templates::File or args.first.is_a? Templates::String
-        @content = @layout.sub('{yield}', render(args.first))
+        @content = render(@layout, args.first)
       end
     end
     # Sets/overwrites the @layout variable.
@@ -165,7 +174,7 @@ module Stevenson
         else
           template = args.first
         end
-        @layout = render(template)
+        @layout = template
       end
     end
   end
