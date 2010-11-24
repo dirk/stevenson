@@ -29,7 +29,7 @@ module Stevenson
       
       if args.last.is_a? Hash
         # Default options.
-        @opts = {:run => false, :handler => Rack::Handler::Mongrel}.merge args.last
+        @opts = {:run => true, :handler => Rack::Handler::Mongrel}.merge args.last
       end
       
       puts '- Parsing description'

@@ -8,7 +8,7 @@ The current vision is for Stevenson to truly be a fusion of @jekyll@ and @sinatr
 
 h2. What can I do/how do I start?
 
-I'm going to go ahead an assume you know what you're doing with Ruby, Rubygems, git, and GitHub. Go ahead and fork your own copy, then clone that down to your local machine. The best place to start will be in the @test@ directory. While I'm not using a full-featured testing framework at this point, it is set up so that you can run:
+I'm going to assume you know what you're doing with Ruby, Rubygems, git, and GitHub. Go ahead and fork your own copy, then clone that down to your local machine. The best place to start will be in the @test@ directory. While I'm not using a full-featured testing framework at this point, it is set up so that you can run:
 
 bc. ruby test/app.rb
 
