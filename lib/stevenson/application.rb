@@ -1,14 +1,14 @@
 module Stevenson
   class Application
-    # Every application starts with a call to :pen. This is where the journey begins.
+    # Every application starts with a call to #pen. This is where the journey begins.
     class << self
       @@applications = []
       
-      # Called by the :pen method in Stevenson::Delegate. Creates and returns an instance of a Stevenson application.
+      # Called by Stevenson::Delegator.pen. Creates and returns an instance of a Stevenson application.
       def pen(*args, &block)
         self.new(*args, &block)
       end
-      # Returns an instance of Stevenson::Application by the offset. Makes life easier with Rack.
+      # Returns an instance of Stevenson::Application by the offset. Makes life easier with Rack. (Normally you won't need offset unless you're made multiple Stevenson instances.)
       def rack(offset = 0)
         @@applications[offset].server
       end
@@ -18,10 +18,11 @@ module Stevenson
     attr_reader :routes, :server
     attr_accessor :opts
     
-    # Called mainly by the :pen class method in Stevenson::Application. Sets up a Stevenson application.
+    # Called mainly by the Stevenson::Application.pen class method. Sets up a Stevenson application.
     def initialize(*args, &block)
-      @collections = {}
-      @current_collection = :root
+      #@collections = {}
+      #@current_collection = :root
+      @current_nest = Nest.new(:root, nil)
       @routes = {}
       @opts = {}
       # Keeping a list of all the applications for Stevenson::Application.rack
@@ -38,19 +39,28 @@ module Stevenson
       self.run!
     end
     
-    # DSL method to define a collection.
+    # DSL method to define a collection. Collections allow you to group Pages without providing an "index" view. If you want an "index" view, use a #page instead.
     def collection(name, &block)
-      @current_collection = name
+      @current_nest = Nests::Collection.new(name, @current_nest)
+      #@current_collection = name
       self.instance_eval &block
-      @current_collection = :root
+      #@current_collection = :root
+      @current_nest = @current_nest.parent
     end
     
-    # DSL method to define a page.
-    def page(name, opts = {}, block = Proc.new {})
+    # DSL method to define a page. Now, with the new nesting syntax and the fact that a Page is a Next, a Page can have children.
+    def page(name, opts = {}, &block)
       # TODO: Make this a little bit prettier.
-      puts '+ Page: ' + @current_collection.to_s + '/' + name.to_s
-      @routes[((@current_collection == :root) ? '/' : ('/' + @current_collection.to_s + '/')) + name.to_s] = \
-        ((@collections[@current_collection] ||= []) << Page.new(name, opts.merge({:collection => @current_collection}), &block)).last
+      puts '+ Page: /' + @current_nest.path + name.to_s
+      #@routes[((@current_collection == :root) ? '/' : ('/' + @current_collection.to_s + '/')) + name.to_s] = \
+      #  ((@collections[@current_collection] ||= []) << Page.new(name, opts.merge({:collection => @current_collection}), &block)).last
+      page = Page.new(name, @current_nest, opts)
+      
+      if block
+        @current_nest = page
+        self.instance_eval &block
+        @current_nest = page.parent
+      end
     end
     
     # Attempts to instantiate an instance of Stevenson::Server

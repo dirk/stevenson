@@ -8,6 +8,7 @@ module Stevenson
   
   autoload :Application, "#{STEVIE}/application"
   autoload :Page,        "#{STEVIE}/page"
+  autoload :Nest,        "#{STEVIE}/nest"
   
   autoload :Delegator,   "#{STEVIE}/delegator"
   autoload :Server,      "#{STEVIE}/server"

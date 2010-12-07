@@ -1,9 +1,9 @@
 module Stevenson
-  class Page
+  class Page < Nest
     # Pages are the fundamental part of Stevenson. Can be organized into collections for grouping purposes.
-    def initialize(name, opts)
-      @name = name
-      @collection = opts[:collection]
+    def initialize(name, parent, opts)
+      super(name, parent)
+      #@collection = opts[:collection]
       @attrs = []; @attributes = @attrs;
       @content = nil
       @opts = opts
@@ -17,7 +17,7 @@ module Stevenson
     def path
       return @path if @path
       if @opts[:path].to_s.empty?
-        collection_path = (@collection == :root) ? '' : (@collection.to_s + '/')
+        collection_path = @parent.path
         #puts Dir[File.expand_path(collection_path + @name.to_s + '.*')].inspect
         @path = File.expand_path(collection_path + @name.to_s + '.rb')
       else
