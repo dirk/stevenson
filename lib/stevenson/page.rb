@@ -26,6 +26,9 @@ module Stevenson
       end
       @path
     end
+    def route
+      @route ||= '/' + @parent.path + @name.to_s
+    end
     
     # Deprecated; not sure if it's even being used.
     def format?(path)
@@ -162,6 +165,8 @@ module Stevenson
         @content = ''
       elsif args.first.is_a? Templates::File or args.first.is_a? Templates::String
         @content = render(@layout, args.first)
+      elsif args.first.respond_to? :to_s
+        @content = args.first.to_s
       end
     end
     # Sets/overwrites the @layout variable.

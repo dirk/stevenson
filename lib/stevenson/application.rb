@@ -51,7 +51,6 @@ module Stevenson
     # DSL method to define a page. Now, with the new nesting syntax and the fact that a Page is a Next, a Page can have children.
     def page(name, opts = {}, &block)
       # TODO: Make this a little bit prettier.
-      puts '+ Page: /' + @current_nest.path + name.to_s
       #@routes[((@current_collection == :root) ? '/' : ('/' + @current_collection.to_s + '/')) + name.to_s] = \
       #  ((@collections[@current_collection] ||= []) << Page.new(name, opts.merge({:collection => @current_collection}), &block)).last
       page = Page.new(name, @current_nest, opts)
@@ -61,6 +60,10 @@ module Stevenson
         self.instance_eval &block
         @current_nest = page.parent
       end
+      
+      @routes[page.route] = page
+      
+      puts '+ Page: ' + page.route
     end
     
     # Attempts to instantiate an instance of Stevenson::Server
