@@ -1,20 +1,25 @@
 module Stevenson
   class Page < Nest
-    attr_accessor :application
-    attr_writer :content, :layout
+    attr_reader :application
+    alias       :app :application
+    
+    attr_writer :content, :layout # Readers already defined.
+    attr_reader :attrs, :attributes, :opts, :hooks
     
     # Pages are the fundamental part of Stevenson. Can be organized into collections for grouping purposes.
     def initialize(name, parent, app, opts)
       super(name, parent)
-      #@collection = opts[:collection]
+      
       @attrs = []; @attributes = @attrs;
       @content = nil
       @opts = opts
       @layout = inline(:erb, '<%= yield %>')
       @application = app
+      @hooks = {
+        :after_initialize => []
+      }
     end
-    
-    # Called by Stevenson::Application once the initialization block has run.
+    # Called by Stevenson::Application once the entire initialization block has run.
     def post_initialize
       @application.helpers.each do |helper|
         self.instance_eval &helper
@@ -22,7 +27,17 @@ module Stevenson
       
       # Evaluate the contents of the page file within the scope of the page.
       eval(File.read(path!) {|f| f.read })
+      
+      @hooks[:after_initialize].each {|hook| self.instance_eval &hook }
     end
+    
+    # Hooks
+      
+      # Adds a hook that is called after the initialization sequence has run (hooks are called at the end of post_initialize).
+      def after_initialize(&block)
+        @hooks[:after_initialize] << block
+      end
+    
     
     # Figures out where to look for the page file.
     def path!
@@ -87,7 +102,7 @@ module Stevenson
     
     
     
-    # Utility methods for actually rendering the page, like :attr, :content, :layout and so forth go in here.
+    # Utility methods for actually rendering the page, like `attr`, `content`, `layout` and so forth.
     
     # Allows for the storage of options within an attribute.
     class Attribute
@@ -151,15 +166,17 @@ module Stevenson
     
     # Allows for easy setting or getting of an attribute. Considering throwing in method_missing for getting.
     def attr(key, *args)
-      if args.length == 0
+      if args.length == 0 # Getter
         @attrs.select {|a| a.key == key.to_sym }.first
-      else
-        opts = (args.length == 2) ? args[1] : {}
+        
+      else # Setter
+        opts = (args.length === 2) ? args[1] : {}
         @attrs << Attribute.new(self, key.to_sym, args[0], args[1])
       end
     end
+    alias :set :attr
     
-    # Grab the contents of a file within the directory of the path (/ for :root collection, for example)
+    # Returns a Templates::File object for the given path.
     def file(path, format = nil)
       # Old-age functionality that included auto-calculated prefixes.
       #basepath = (@collection == :root) ? File.expand_path('./') : File.expand_path(@collection.to_s + '/')
@@ -174,21 +191,25 @@ module Stevenson
       return Templates::String.new(content, format)
     end
     
-    # Tells it what to render for the content of the page.
+    # Tells it what to render for the content of the page. Returns the @content variable is no arguments passed.
+    # If given a Templates::File or Templates::String, it will defer rendering until after initialization.
+    # 
+    # TODO: Make this more reusable, extensible, and DRY.
     def content(*args)
       if args.length === 0
         return @content
       elsif args.first === false
         @content = ''
       elsif args.first.is_a? Templates::File or args.first.is_a? Templates::String
-        @content = render(@layout, args.first)
+        self.after_initialize do
+          @content = render(@layout, args.first)
+        end
       elsif args.first.respond_to? :to_s
         @content = args.first.to_s
       end
     end
     
-    # Sets/overwrites the @layout variable. Returns the @layout variable if not arguments passed.
-    # TODO: Make it so that this doesn't need to be called before content.
+    # Sets/overwrites the @layout variable. Returns the @layout variable if no arguments passed.
     def layout(*args)
       if args.length === 0
         return @layout
