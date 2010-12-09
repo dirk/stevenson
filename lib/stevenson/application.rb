@@ -37,7 +37,7 @@ module Stevenson
       puts '- Parsing description'
       self.instance_eval &block
       
-      @current_nest.each { if self.respond_to? :post_initialize; self.post_initialize; end }
+      @current_nest.each_recursive { if self.respond_to? :post_initialize; self.post_initialize; end }
       
       self.run!
     end

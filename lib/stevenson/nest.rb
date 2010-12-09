@@ -1,9 +1,9 @@
 module Stevenson
   # Abstraction of the nesting system to allow for collections to be nested in a logical, programmatic way.
   class Nest
-    attr_reader :name, :parent
+    attr_reader :name
     
-    # Constructor.
+    # Constructor; arguments should be self-explanatory.
     def initialize(name, parent)
       @name = name.to_sym
       @parent = parent
@@ -23,16 +23,44 @@ module Stevenson
       @children << child
     end
     
+    # Pass a block to be executed for each of the Nest's children.
+    def each
+      @children.each do |child|
+        yield child
+      end
+    end
+    
+    # Returns the parent; if a name is given, it will look through all of the parents for the parent with the name.
+    def parent(name = nil)
+      # ^ It's moments like these that I wish Ruby was Erlang.
+      if name
+        self.parents.select {|p| p.name.to_sym === name.to_sym }.first
+      else
+        @parent
+      end
+    end
+    
+    # Assembles an array of the Nest's parents.
+    def parents
+      parents = []
+      s = self
+      while p = s.parent
+        parents << p
+        s = p
+      end
+      return parents
+    end
+    
     def nest?
       true
     end
     
     # Runs a block for this Nest, then calls each on all of its parents.
-    def each(&block)
+    def each_recursive(&block)
       self.instance_eval &block
       
       @children.each do |child|
-        child.each &block
+        child.each_recursive &block
       end
     end
     
