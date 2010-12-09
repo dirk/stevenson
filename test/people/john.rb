@@ -1,5 +1,4 @@
 attr :name, 'John Smith'
-
-layout file('default.erb')
+attr :title, 'People / John Smith'
 
 content file('john_smith.erb')

@@ -5,18 +5,18 @@
 require 'rubygems'
 require '../lib/stevenson'
 
-pen :run => true do
+pen do
   helpers do
-    def test
-      'testing'
+    def reverse_name(name)
+      name.reverse
     end
   end
   
+  root(page :index)
+  
   page :people do
     page :john
+    page :jane
   end
   page :about
-  
 end
-
-# Currently makes routes to "/about" and "/people/john".

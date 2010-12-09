@@ -1,3 +1,13 @@
-People: <% app.people.each do |person| %><%= person.url %>, <% end %>
-
-<%= yield %>
+<html>
+	<head>
+		<title><%= (attr :title).to_s.empty? ? 'Enormicon Facebook' : (attr :title).to_s + ' - Enormicon Facebook' %></title>
+	</head>
+	<body>
+		<% unless page === app.root %>
+			<a href="/">Go home</a>
+			<hr />
+		<% end %>
+		
+		<%= yield %>
+	</body>
+</html>

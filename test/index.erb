@@ -1,0 +1,9 @@
+<h1>Welcome to the Enormicon Facebook!</h1>
+<h2>Here are some interesting people:</h2>
+<ul>
+	<% app.people.each do |person| %>
+		<li><a href="<%= person.url %>"><%= person.attr(:name).value.to_s %></a></li>
+	<% end %>
+</ul>
+<hr />
+<a href="/about">About</a>

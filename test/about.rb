@@ -1,3 +1,3 @@
 attr :title, 'About Stevenson'
 
-content test
+content inline(:erb, 'Test page.')
