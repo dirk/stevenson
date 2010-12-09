@@ -38,6 +38,14 @@ module Stevenson
         @hooks[:after_initialize] << block
       end
     
+    #
+    def method_missing(method, *args)
+      if @attrs.collect {|a| a.key }.include? method
+        @attrs.select {|a| a.key === method }.first.value
+      else
+        super(method, *args)
+      end
+    end
     
     # Figures out where to look for the page file.
     def path!

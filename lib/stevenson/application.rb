@@ -77,6 +77,14 @@ module Stevenson
       end
     end
     
+    def method_missing(method, *args)
+      if @root.children.collect {|c| c.name }.include? method
+        @root.children.select {|c| c.name == method}.first
+      else
+        super(method, *args)
+      end
+    end
+    
     # Attempts to instantiate an instance of Stevenson::Server
     # Server either instantiates a Rack instance and hooks itself up to Rack,
     # or makes itself available to be hooked up to Rack).

@@ -13,6 +13,14 @@ module Stevenson
       @parent.child! self unless @parent.nil?
     end
     
+    def method_missing(method, *args)
+      if @children.collect {|c| c.name }.include? method
+        @children.select {|c| c.name === method }.first
+      else
+        super(method, *args)
+      end
+    end
+    
     # Detects whether or not it is the root nest.
     def root?
       true if @parent.nil?
