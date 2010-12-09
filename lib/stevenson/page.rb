@@ -1,6 +1,7 @@
 module Stevenson
   class Page < Nest
     attr_accessor :application
+    attr_writer :content, :layout
     
     # Pages are the fundamental part of Stevenson. Can be organized into collections for grouping purposes.
     def initialize(name, parent, app, opts)
@@ -12,6 +13,7 @@ module Stevenson
       @layout = '{yield}'
       @application = app
     end
+    
     # Called by Stevenson::Application once the initialization block has run.
     def post_initialize
       @application.helpers.each do |helper|
@@ -35,7 +37,8 @@ module Stevenson
       end
       @path
     end
-    # Calculates to request path to the page.
+    
+    # Calculates the request path to the page.
     def route
       @route ||= '/' + @parent.path + @name.to_s
     end
@@ -70,13 +73,15 @@ module Stevenson
         return data.to_s
       end
     end
+    
+    # Required for ERB rendering.
     def render_erb(content, &block)
       return ERB.new(content).result binding
     end
     
+    # Each page must ultimately respond to a call method, which returns an HTML file to be sent to the browser.
+    # Layouts and other magic happen inside the page; the page can look up the tree into collections and so forth to infer which layout to use (eventually), but the rendering itself should happen in the page.
     def call
-      # Each page must ultimately respond to a call method, which returns an HTML file to be sent to the browser.
-      # Layouts and other magic happen inside the page; the page can look up the tree into collections and so forth to infer layout to use, but the rendering itself should happen in the page.
       return @content
     end
     
@@ -171,7 +176,9 @@ module Stevenson
     
     # Tells it what to render for the content of the page.
     def content(*args)
-      if args.first === false
+      if args.length === 0
+        return @content
+      elsif args.first === false
         @content = ''
       elsif args.first.is_a? Templates::File or args.first.is_a? Templates::String
         @content = render(@layout, args.first)
@@ -179,9 +186,12 @@ module Stevenson
         @content = args.first.to_s
       end
     end
-    # Sets/overwrites the @layout variable.
+    
+    # Sets/overwrites the @layout variable. Returns the @layout variable if not arguments passed.
     def layout(*args)
-      if args.first === false
+      if args.length === 0
+        return @layout
+      elsif args.first === false
         @layout = '{yield}'
       elsif args.first.is_a? Templates::File or args.first.is_a? Templates::String
         if args.first.is_a? Templates::File
