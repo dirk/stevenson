@@ -54,7 +54,7 @@ module Stevenson
     # Determines whether it's a page or a static file, then returns a response to Stevenson::Server.
     def route
       rp = request.path_info
-      if rp[rp.length - 1, rp.length] == '/'
+      if rp[rp.length - 1, rp.length] == '/' and rp != '/'
         rp = rp[0, rp.length - 1]
       end
       
