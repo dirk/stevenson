@@ -12,7 +12,7 @@ pen :run => true do
     end
   end
   
-  collection :people do
+  page :people do
     page :john
   end
   page :about

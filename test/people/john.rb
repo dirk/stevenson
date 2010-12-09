@@ -1,3 +1,5 @@
-layout file('default.erb')
+
+
+layout file('default.haml')
 
 content file('people/john_smith.erb')
