@@ -15,8 +15,7 @@ module Stevenson
     end
     
     
-    attr_reader :routes, :server, :root
-    attr_accessor :opts
+    attr_reader :routes, :server, :root, :opts
     
     # Called mainly by the Stevenson::Application.pen class method. Sets up a Stevenson application.
     def initialize(*args, &block)
@@ -24,14 +23,14 @@ module Stevenson
       #@current_collection = :root
       @root = @current_nest = Nest.new(:root, nil)
       @routes = {}
-      @opts = {}
+      @opts = {:run => true, :handler => Rack::Handler::Mongrel}
       @helpers = []
       # Keeping a list of all the applications for Stevenson::Application.rack
       @@applications << self
       
       if args.last.is_a? Hash
         # Default options.
-        @opts = {:run => true, :handler => Rack::Handler::Mongrel}.merge args.last
+        @opts = @opts.merge args.last
       end
       
       puts '- Parsing description'
