@@ -26,7 +26,7 @@ module Stevenson
       end
       
       # Evaluate the contents of the page file within the scope of the page.
-      eval(File.read(path!) {|f| f.read })
+      eval(::File.open(path!, 'r') {|f| f.read })
       
       @hooks[:after_initialize].each {|hook| self.instance_eval &hook }
     end
@@ -141,12 +141,14 @@ module Stevenson
       
       # Abstracts a file into standardized attributes: path, format, and content.
       class File
-        attr_accessor :path, :format, :original_path
+        attr_accessor :path, :format, :original_path, :page
         
-        def self.prefix(prefix, old)
-          self.new(prefix + old.original_path, old.format)
+        def self.prefix(page, prefix, old)
+          self.new(page, prefix + old.original_path, old.format)
         end
-        def initialize(path, format = nil, content = nil)
+        def initialize(page, path, format = nil, content = nil)
+          @page = page
+          
           if format
             @format = format.to_sym
           else
@@ -160,14 +162,21 @@ module Stevenson
           end
           
           @original_path = path
-          @path = ::File.expand_path('./') + (path.slice(0,1) === '/' ? '' : '/') + path
+          
+          # ::File.expand_path('./') + (path.slice(0,1) === '/' ? '' : '/') + path
+          base_path = ::File.expand_path('./') + '/' + path
+          page_path = ::File.expand_path('./') + '/' + @page.parent.path + path
+          
+          if ::File.file?(page_path)
+            @path = page_path
+          else
+            @path = base_path
+          end
         end
         def content
-          if ::File.file?(path)
-            @content ||= ::File.read(path) {|f| f.read }
-          else
-            ''
-          end
+          #if ::File.file?(path)
+            @content ||= ::File.open(path, 'r') {|f| f.read }
+          #end
         end
       end
     end
@@ -192,7 +201,7 @@ module Stevenson
       #return Templates::File.new((@collection === :root ? '' : @collection.to_s + '/') + path)
       
       # New-age simplicity.
-      return Templates::File.new(path)
+      return Templates::File.new(self, path)
     end
     # Creates a Template::String object from a given format and string (Hint: Use some heredoc syntax).
     def inline(format, content)
@@ -225,7 +234,7 @@ module Stevenson
         @layout = inline(:erb, '<%= yield %>')
       elsif args.first.is_a? Templates::File or args.first.is_a? Templates::String
         if args.first.is_a? Templates::File
-          template = Templates::File.prefix('layouts/', args.first)
+          template = Templates::File.prefix(self, 'layouts/', args.first)
         else
           template = args.first
         end

@@ -53,9 +53,14 @@ module Stevenson
     
     # Determines whether it's a page or a static file, then returns a response to Stevenson::Server.
     def route
-      if @app.routes.keys.include? request.path_info
+      rp = request.path_info
+      if rp[rp.length - 1, rp.length] == '/'
+        rp = rp[0, rp.length - 1]
+      end
+      
+      if @app.routes.keys.include? rp
         response['Content-Type'] = 'text/html'
-        response.write @app.routes[request.path_info].call
+        response.write @app.routes[rp].call
         return response
       end
       
