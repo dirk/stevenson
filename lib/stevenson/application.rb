@@ -25,6 +25,7 @@ module Stevenson
       @current_nest = Nest.new(:root, nil)
       @routes = {}
       @opts = {}
+      @helpers = []
       # Keeping a list of all the applications for Stevenson::Application.rack
       @@applications << self
       
@@ -35,6 +36,8 @@ module Stevenson
       
       puts '- Parsing description'
       self.instance_eval &block
+      
+      @current_nest.each { if self.respond_to? :post_initialize; self.post_initialize; end }
       
       self.run!
     end
@@ -53,7 +56,7 @@ module Stevenson
       # TODO: Make this a little bit prettier.
       #@routes[((@current_collection == :root) ? '/' : ('/' + @current_collection.to_s + '/')) + name.to_s] = \
       #  ((@collections[@current_collection] ||= []) << Page.new(name, opts.merge({:collection => @current_collection}), &block)).last
-      page = Page.new(name, @current_nest, opts)
+      page = Page.new(name, @current_nest, self, opts)
       
       if block
         @current_nest = page
@@ -64,6 +67,14 @@ module Stevenson
       @routes[page.route] = page
       
       puts '+ Page: ' + page.route
+    end
+    
+    def helpers(&block)
+      if block
+        @helpers << block
+      else
+        return @helpers
+      end
     end
     
     # Attempts to instantiate an instance of Stevenson::Server

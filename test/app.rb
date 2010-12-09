@@ -6,10 +6,17 @@ require 'rubygems'
 require '../lib/stevenson'
 
 pen :run => true do
+  helpers do
+    def test
+      'testing'
+    end
+  end
+  
   collection :people do
     page :john
   end
   page :about
+  
 end
 
 # Currently makes routes to "/about" and "/people/john".

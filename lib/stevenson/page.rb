@@ -1,13 +1,22 @@
 module Stevenson
   class Page < Nest
+    attr_accessor :application
+    
     # Pages are the fundamental part of Stevenson. Can be organized into collections for grouping purposes.
-    def initialize(name, parent, opts)
+    def initialize(name, parent, app, opts)
       super(name, parent)
       #@collection = opts[:collection]
       @attrs = []; @attributes = @attrs;
       @content = nil
       @opts = opts
       @layout = '{yield}'
+      @application = app
+    end
+    # Called by Stevenson::Application once the initialization block has run.
+    def post_initialize
+      @application.helpers.each do |helper|
+        self.instance_eval &helper
+      end
       
       # Evaluate the contents of the page file within the scope of the page.
       eval(File.read(path) {|f| f.read })
@@ -26,6 +35,7 @@ module Stevenson
       end
       @path
     end
+    # Calculates to request path to the page.
     def route
       @route ||= '/' + @parent.path + @name.to_s
     end
