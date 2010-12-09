@@ -13,6 +13,7 @@ module Stevenson
       @parent.child! self unless @parent.nil?
     end
     
+    # Searches for children with a name matching the method; then falls back to throwing errors.
     def method_missing(method, *args)
       if @children.collect {|c| c.name }.include? method
         @children.select {|c| c.name === method }.first

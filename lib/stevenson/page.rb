@@ -31,14 +31,13 @@ module Stevenson
       @hooks[:after_initialize].each {|hook| self.instance_eval &hook }
     end
     
-    # Hooks
-      
-      # Adds a hook that is called after the initialization sequence has run (hooks are called at the end of post_initialize).
+    #-- Hooks
+      #++ Adds a hook that is called after the initialization sequence has run (hooks are called at the end of post_initialize).
       def after_initialize(&block)
         @hooks[:after_initialize] << block
       end
     
-    #
+    # Builds upon Stevenson::Nest; adds ability to get attributes.
     def method_missing(method, *args)
       if @attrs.collect {|a| a.key }.include? method
         @attrs.select {|a| a.key === method }.first.value
@@ -181,7 +180,7 @@ module Stevenson
       end
     end
     
-    # Allows for easy setting or getting of an attribute. Considering throwing in method_missing for getting.
+    # Allows for easy setting or getting of an attribute.
     def attr(key, *args)
       if args.length == 0 # Getter
         @attrs.select {|a| a.key == key.to_sym }.first
