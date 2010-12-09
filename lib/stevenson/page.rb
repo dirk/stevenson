@@ -21,11 +21,11 @@ module Stevenson
       end
       
       # Evaluate the contents of the page file within the scope of the page.
-      eval(File.read(path) {|f| f.read })
+      eval(File.read(path!) {|f| f.read })
     end
     
     # Figures out where to look for the page file.
-    def path
+    def path!
       return @path if @path
       if @opts[:path].to_s.empty?
         collection_path = @parent.path
