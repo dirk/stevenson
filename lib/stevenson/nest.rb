@@ -2,6 +2,7 @@ module Stevenson
   # Abstraction of the nesting system to allow for collections to be nested in a logical, programmatic way.
   class Nest
     attr_reader :name, :children
+    attr_writer :parent
     
     # Constructor; arguments should be self-explanatory.
     def initialize(name, parent)
@@ -76,7 +77,7 @@ module Stevenson
     # Recursively calculates the path to this node (climbs up the parents).
     # Returns a path like "one/two/three/"
     def path(children = '')
-      return children if @parent.nil? and @name == :root
+      return children if @parent.nil?
       
       path = @name.to_s + '/' + children
       
@@ -86,9 +87,17 @@ module Stevenson
         @parent.path(path)
       end
     end
-    # Returns path with a leading "/" added and the trailing "/" removed.
-    def url
-      '/' + path[0...-1]
+    # Returns...
+    def url(children = [])
+      unless @name === :root or @name === :index
+        children << name.to_s
+      end
+      
+      if @parent.nil?
+        '/' + children.reverse.join('/')
+      else
+        @parent.url(children)
+      end
     end
   end
   

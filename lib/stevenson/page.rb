@@ -19,15 +19,17 @@ module Stevenson
       @layout = @@default_layout
       @content = nil
       @opts = opts
+      @render_block = nil
       
-      after_initialize do
-        # Inherit layout from parents.
-        begin
-          unless parent.layout === @@default_layout
-            @layout = parent.layout
-          end
-        rescue NoMethodError; end
-      end
+      # Inherit layout from parents.
+      begin
+        unless parent.layout === @@default_layout
+          @layout = parent.layout
+        end
+      rescue NoMethodError; end
+      
+      # Evaluate the contents of the page file within the scope of the page.
+      eval(::File.open(path!, 'r') {|f| f.read })
     end
     # Called by Stevenson::Application once the entire initialization block has run.
     def post_initialize
@@ -35,10 +37,11 @@ module Stevenson
         self.instance_eval &helper
       end
       
-      # Evaluate the contents of the page file within the scope of the page.
-      eval(::File.open(path!, 'r') {|f| f.read })
-      
       @hooks[:after_initialize].each {|hook| self.instance_eval &hook }
+      
+      if @render_block
+        self.instance_eval &@render_block
+      end
     end
     
     #-- Hooks
@@ -56,13 +59,18 @@ module Stevenson
       end
     end
     
+    def page; self; end
+    
     # Figures out where to look for the page file.
     def path!
       return @path if @path
       if @opts[:path].to_s.empty?
-        collection_path = @parent.path
         #puts Dir[File.expand_path(collection_path + @name.to_s + '.*')].inspect
-        @path = File.expand_path(collection_path + @name.to_s + '.rb')
+        if @parent.nil?
+          @path = File.expand_path('./' + @name.to_s + '.rb')
+        else
+          @path = File.expand_path(@parent.path + @name.to_s + '.rb')
+        end
       else
         #puts File.expand_path(@opts[:path])
         @path = File.expand_path(@opts[:path])
@@ -72,7 +80,7 @@ module Stevenson
     
     # Calculates the request path to the page.
     def route
-      @route ||= '/' + @parent.path + @name.to_s
+      @route ||= self.url
     end
     
     # Deprecated; not sure if it's even being used.
@@ -174,7 +182,11 @@ module Stevenson
           
           # ::File.expand_path('./') + (path.slice(0,1) === '/' ? '' : '/') + path
           base_path = ::File.expand_path('./') + '/' + path
-          page_path = ::File.expand_path('./') + '/' + @page.parent.path + path
+          if @page.parent.nil?
+            page_path = ::File.expand_path('./') + '/' + path
+          else
+            page_path = ::File.expand_path('./') + '/' + @page.parent.path + path
+          end
           
           if ::File.file?(page_path)
             @path = page_path
@@ -227,7 +239,7 @@ module Stevenson
       elsif args.first === false
         @content = ''
       elsif args.first.is_a? Templates::File or args.first.is_a? Templates::String
-        self.after_initialize do
+        @render_block = Proc.new do
           @content = render(@layout, args.first)
         end
       elsif args.first.respond_to? :to_s

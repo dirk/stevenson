@@ -15,7 +15,7 @@ module Stevenson
     end
     
     
-    attr_reader :routes, :server, :root, :opts
+    attr_reader :routes, :server, :opts
     
     # Called mainly by the Stevenson::Application.pen class method. Sets up a Stevenson application.
     def initialize(*args, &block)
@@ -66,6 +66,20 @@ module Stevenson
       @routes[page.route] = page
       
       puts '+ Page: ' + page.route
+      
+      return page
+    end
+    
+    def root(p = nil)
+      if p.is_a? Stevenson::Page
+        @root = p
+        @current_nest = p
+        p.parent = nil
+      elsif p === nil
+        return @root
+      else
+        raise Exception.new('Unrecognized object')
+      end
     end
     
     def helpers(&block)
