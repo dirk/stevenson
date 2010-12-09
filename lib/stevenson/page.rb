@@ -10,14 +10,24 @@ module Stevenson
     def initialize(name, parent, app, opts)
       super(name, parent)
       
-      @attrs = []; @attributes = @attrs;
-      @content = nil
-      @opts = opts
-      @layout = inline(:erb, '<%= yield %>')
       @application = app
+      @attrs = []; @attributes = @attrs;
       @hooks = {
         :after_initialize => []
       }
+      
+      @layout = @@default_layout
+      @content = nil
+      @opts = opts
+      
+      after_initialize do
+        # Inherit layout from parents.
+        begin
+          unless parent.layout === @@default_layout
+            @layout = parent.layout
+          end
+        rescue NoMethodError; end
+      end
     end
     # Called by Stevenson::Application once the entire initialization block has run.
     def post_initialize
@@ -225,6 +235,7 @@ module Stevenson
       end
     end
     
+    @@default_layout = Templates::String.new('<%= yield %>', :erb)
     # Sets/overwrites the @layout variable. Returns the @layout variable if no arguments passed.
     def layout(*args)
       if args.length === 0
