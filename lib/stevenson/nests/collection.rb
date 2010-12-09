@@ -6,7 +6,9 @@ module Stevenson
       end
       
       # Eventually should return the pages in the collection.
-      def pages; end
+      def pages
+        @children.select {|n| n.respond_to? :page? ? n.page? : false }
+      end
     end
   end
 end

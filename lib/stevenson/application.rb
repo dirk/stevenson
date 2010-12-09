@@ -15,14 +15,14 @@ module Stevenson
     end
     
     
-    attr_reader :routes, :server
+    attr_reader :routes, :server, :root
     attr_accessor :opts
     
     # Called mainly by the Stevenson::Application.pen class method. Sets up a Stevenson application.
     def initialize(*args, &block)
       #@collections = {}
       #@current_collection = :root
-      @current_nest = Nest.new(:root, nil)
+      @root = @current_nest = Nest.new(:root, nil)
       @routes = {}
       @opts = {}
       @helpers = []
