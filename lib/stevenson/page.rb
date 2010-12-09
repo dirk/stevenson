@@ -10,7 +10,7 @@ module Stevenson
       @attrs = []; @attributes = @attrs;
       @content = nil
       @opts = opts
-      @layout = '{yield}'
+      @layout = inline(:erb, '<%= yield %>')
       @application = app
     end
     
@@ -188,11 +188,12 @@ module Stevenson
     end
     
     # Sets/overwrites the @layout variable. Returns the @layout variable if not arguments passed.
+    # TODO: Make it so that this doesn't need to be called before content.
     def layout(*args)
       if args.length === 0
         return @layout
       elsif args.first === false
-        @layout = '{yield}'
+        @layout = inline(:erb, '<%= yield %>')
       elsif args.first.is_a? Templates::File or args.first.is_a? Templates::String
         if args.first.is_a? Templates::File
           template = Templates::File.prefix('layouts/', args.first)
