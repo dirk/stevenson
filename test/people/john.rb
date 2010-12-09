@@ -1,5 +1,5 @@
+attr :name, 'John Smith'
 
+layout file('default.erb')
 
-layout file('default.haml')
-
-content file('people/john_smith.erb')
+content file('john_smith.erb')
