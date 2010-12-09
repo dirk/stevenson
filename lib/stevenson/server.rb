@@ -51,7 +51,7 @@ module Stevenson
       end
     end
     
-    # Determines whether it's a page or a static file.
+    # Determines whether it's a page or a static file, then returns a response to Stevenson::Server.
     def route
       if @app.routes.keys.include? request.path_info
         response['Content-Type'] = 'text/html'

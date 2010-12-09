@@ -18,6 +18,7 @@ module Stevenson
       true if @parent.nil?
     end
     
+    # Called by a child to notify the parent of its presence.
     def child!(child)
       @children << child
     end
@@ -26,6 +27,16 @@ module Stevenson
       true
     end
     
+    # Runs a block for this Nest, then calls each on all of its parents.
+    def each(&block)
+      self.instance_eval &block
+      
+      @children.each do |child|
+        child.each &block
+      end
+    end
+    
+    # Recursively calculates the path to this node (climbs up the parents).
     def path(children = '')
       return children if @parent.nil? and @name == :root
       
