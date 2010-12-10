@@ -1,5 +1,18 @@
 module Stevenson
+  # The core of every Stevenson application is the serving of pages.
+  # == Lifecycle
+  # * Stevenson::Application.page method called, instantiates a new Page object.
+  # * Page object reads and evaluates its own file, which creates a sequence of events executed on every page:
+  # 1. <b>Describe</b>: Sets attributes, layout, content, and other "static" variables about the page.
+  # 2. <b>Initialize</b>: After every page has been described, initialize is called on every page; this is when any data processing/preparation should happen.
+  # 
+  # == To-Do
+  # * Fully implement describe-initialize system.
+  # * Add functionality to allow for re-evaluation (don't need to restart the server after changing files).
+  # * Refactor rendering system to make it more robust and maintainable.
   class Page < Nest
+    include Stevenson::Templates
+    
     attr_reader :application
     alias       :app :application
     
@@ -65,15 +78,13 @@ module Stevenson
     def path!
       return @path if @path
       if @opts[:path].to_s.empty?
-        #puts Dir[File.expand_path(collection_path + @name.to_s + '.*')].inspect
-        if @parent.nil?
-          @path = File.expand_path('./' + @name.to_s + '.rb')
+        if @parent.nil? # If it's the root.
+          @path = ::File.expand_path('./' + @name.to_s + '.rb')
         else
-          @path = File.expand_path(@parent.path + @name.to_s + '.rb')
+          @path = ::File.expand_path(@parent.path + @name.to_s + '.rb')
         end
       else
-        #puts File.expand_path(@opts[:path])
-        @path = File.expand_path(@opts[:path])
+        @path = ::File.expand_path(@opts[:path])
       end
       @path
     end
@@ -97,6 +108,7 @@ module Stevenson
     end
     
     # Self-explanatory; takes either a Templates::File, Templates::String, or any other object that responds to to_s.
+    # The optional sub variable allows for another template to be provided for yield'ing in the templating engine.
     def render(data, sub = nil)
       if data.is_a? Templates::File or data.is_a? Templates::String
         if data.format == :erb
@@ -125,103 +137,18 @@ module Stevenson
       return @content
     end
     
-    
-    
-    # Utility methods for actually rendering the page, like `attr`, `content`, `layout` and so forth.
-    
-    # Allows for the storage of options within an attribute.
-    class Attribute
-      attr_accessor :key, :value, :opts
-      attr_reader :parent
-      
-      def initialize(parent, key, value, opts)
-        @parent = parent; @key = key; @value = value; @opts = opts
-      end
-      # Expose the value of the attribute. (Aliased as :v and :value.)
-      def to_s
-        @value
-      end
-      alias :v :to_s
-      alias :value :to_s
-    end
-    
-    # Abstractions of string and files to allow for referenced (files) and inline (string) templating.
-    module Templates
-      # Abstracts a string into standardized attributes: format and content.
-      class String
-        attr_accessor :format, :content
-        
-        def initialize(content, format)
-          @content = content; @format = format
-        end
-      end
-      
-      # Abstracts a file into standardized attributes: path, format, and content.
-      class File
-        attr_accessor :path, :format, :original_path, :page
-        
-        def self.prefix(page, prefix, old)
-          self.new(page, prefix + old.original_path, old.format)
-        end
-        def initialize(page, path, format = nil, content = nil)
-          @page = page
-          
-          if format
-            @format = format.to_sym
-          else
-            if path =~ /haml$/
-              @format = :haml
-            elsif path =~ /erb$/
-              @format = :erb
-            else
-              @format = :html
-            end
-          end
-          
-          @original_path = path
-          
-          # ::File.expand_path('./') + (path.slice(0,1) === '/' ? '' : '/') + path
-          base_path = ::File.expand_path('./') + '/' + path
-          if @page.parent.nil?
-            page_path = ::File.expand_path('./') + '/' + path
-          else
-            page_path = ::File.expand_path('./') + '/' + @page.parent.path + path
-          end
-          
-          if ::File.file?(page_path)
-            @path = page_path
-          else
-            @path = base_path
-          end
-        end
-        def content
-          #if ::File.file?(path)
-            @content ||= ::File.open(path, 'r') {|f| f.read }
-          #end
-        end
-      end
-    end
-    
     # Allows for easy setting or getting of an attribute.
-    def attr(key, *args)
-      if args.length == 0 # Getter
-        @attrs.select {|a| a.key == key.to_sym }.first
-        
+    def attr(key, value = nil)
+      if value.nil? # Getter
+        @attrs[key.to_sym]
       else # Setter
-        opts = (args.length === 2) ? args[1] : {}
-        @attrs << Attribute.new(self, key.to_sym, args[0], args[1])
+        @attrs[key.to_sym] = value
       end
     end
     alias :set :attr
     
     # Returns a Templates::File object for the given path.
     def file(path, format = nil)
-      # Old-age functionality that included auto-calculated prefixes.
-      #basepath = (@collection == :root) ? File.expand_path('./') : File.expand_path(@collection.to_s + '/')
-      #path = basepath + '/' + path
-      #return Templates::File.new((@collection === :root ? '' : @collection.to_s + '/') + path)
-      
-      # New-age simplicity.
       return Templates::File.new(self, path)
     end
     # Creates a Template::String object from a given format and string (Hint: Use some heredoc syntax).
@@ -229,20 +156,19 @@ module Stevenson
       return Templates::String.new(content, format)
     end
     
-    # Tells it what to render for the content of the page. Returns the @content variable is no arguments passed.
-    # If given a Templates::File or Templates::String, it will defer rendering until after initialization.
-    # 
-    # TODO: Make this more reusable, extensible, and DRY.
+    # Sets the @content variable. Returns the @content variable is no arguments passed.
+    # Read the code, it's very self-explanatory.
     def content(*args)
-      if args.length === 0
+      if args.length === 0 # Getter
         return @content
-      elsif args.first === false
+        
+      elsif args.first === false # Make the page have no content
         @content = ''
-      elsif args.first.is_a? Templates::File or args.first.is_a? Templates::String
-        @render_block = Proc.new do
-          @content = render(@layout, args.first)
-        end
-      elsif args.first.respond_to? :to_s
+        
+      elsif args.first.is_a? Templates::File or args.first.is_a? Templates::String # What you should normally do
+        @content = args.first
+        
+      elsif args.first.respond_to? :to_s # If we can at least get a string out of whatever was given.
         @content = args.first.to_s
       end
     end
@@ -250,10 +176,12 @@ module Stevenson
     @@default_layout = Templates::String.new('<%= yield %>', :erb)
     # Sets/overwrites the @layout variable. Returns the @layout variable if no arguments passed.
     def layout(*args)
-      if args.length === 0
+      if args.length === 0 # Getter
         return @layout
-      elsif args.first === false
-        @layout = inline(:erb, '<%= yield %>')
+        
+      elsif args.first === false # Make the page have no layout (just an ERB string that yields to the content).
+        @layout = @@default_layout
+        
       elsif args.first.is_a? Templates::File or args.first.is_a? Templates::String
         if args.first.is_a? Templates::File
           template = Templates::File.prefix(self, 'layouts/', args.first)
