@@ -19,8 +19,6 @@ module Stevenson
     
     # Called mainly by the Stevenson::Application.pen class method. Sets up a Stevenson application.
     def initialize(*args, &block)
-      #@collections = {}
-      #@current_collection = :root
       @root = @current_nest = Nest.new(:root, nil)
       @routes = {}
       @opts = {:run => true, :handler => Rack::Handler::Mongrel}
