@@ -1,0 +1,3 @@
+<% page.children.each do |person| %>
+	<li><a href="<%= person.url %>"><%= person.attr(:name).value.to_s %></a></li>
+<% end %>
