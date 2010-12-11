@@ -1,3 +1,5 @@
-attr :title, 'About Stevenson'
+describe do
+  attr :title, 'About Stevenson'
 
-content inline(:erb, 'Test page.')
+  content inline(:erb, 'Test page.')
+end

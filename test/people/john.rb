@@ -1,4 +1,6 @@
-attr :name, 'John Smith'
-attr :title, 'People / John Smith'
+describe do
+  attr :name, 'John Smith'
+  attr :title, 'People / John Smith'
 
-content file('john_smith.erb')
+  content file('john_smith.erb')
+end

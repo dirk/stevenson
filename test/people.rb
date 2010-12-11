@@ -1,3 +1,5 @@
-layout file('default.erb')
+describe do
+  layout file('default.erb')
 
-content file('people.erb')
+  content file('people.erb')
+end

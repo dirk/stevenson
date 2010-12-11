@@ -2,7 +2,7 @@
 <h2>Here are some interesting people:</h2>
 <ul>
 	<% app.people.each do |person| %>
-		<li><a href="<%= person.url %>"><%= person.attr(:name).value.to_s %></a></li>
+		<li><a href="<%= person.url %>"><%= person.attr(:name).to_s %></a></li>
 	<% end %>
 </ul>
 <hr />
