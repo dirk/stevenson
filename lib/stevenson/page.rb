@@ -46,12 +46,6 @@ module Stevenson
       # Layout/content specifics
       @layout = @@default_layout
       @content = nil
-      # Inherit layout from parents.
-      begin
-        unless parent.layout === @@default_layout
-          @layout = parent.layout
-        end
-      rescue NoMethodError; end
       
       @rendered = false
       @response = nil
@@ -70,6 +64,13 @@ module Stevenson
       @descriptions << block
     end
     def describe!
+      # Check to see if it's possible to inherit layout from parents.
+      begin
+        unless parent.layout === @@default_layout
+          @layout = parent.layout
+        end
+      rescue NoMethodError; end
+      
       @descriptions.each {|d| self.instance_eval &d }
     end
     def act(&block)
