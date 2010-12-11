@@ -14,6 +14,8 @@ pen do
   
   root(page :index)
   
+  static :public => :images
+  
   page :people do
     page :john
     page :jane
