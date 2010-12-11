@@ -2,14 +2,21 @@ module Stevenson
   # The core of every Stevenson application is the serving of pages.
   # == Lifecycle
   # * Stevenson::Application.page method called, instantiates a new Page object.
-  # * Page object reads and evaluates its own file, which creates a sequence of events executed on every page:
-  # 1. <b>Describe</b>: Sets attributes, layout, content, and other "static" variables about the page.
-  # 2. <b>Initialize</b>: After every page has been described, initialize is called on every page; this is when any data processing/preparation should happen.
+  # * Page object reads and evaluates its own file, which creates a sequence of events executed on every page; italicized items indicate that the step directly involves code in the page file:
+  # 1. <b>Load</b>: (Re)sets the clean slate of the application, then evaluates the page file.
+  # 2. <b><i>Describe</i></b>: Sets attributes (attrs), layout, content, and other "static" variables about the page. During this step; the state of the application should <em>not</em> be assumed to be complete.
+  # 3. <b><i>Act</i></b>: After every page has been describe'd, act! is called on every page by the application; this is when any data processing/preparation should happen.
+  # 4. <b>Render</b>: Renders @layout and @content into @response.
+  # 
+  # == Describe
+  # Think of this phase as similar to setting up data in the database; attributes, layout, and content should all be defined in the a describe block so that that information will be available to all other pages.
+  # 
+  # == Act
+  # This is like the controller in the MVC pattern; if you need to process any data to prepare it for rendering, do it here.
   # 
   # == To-Do
-  # * Fully implement describe-initialize system.
   # * Add functionality to allow for re-evaluation (don't need to restart the server after changing files).
-  # * Refactor rendering system to make it more robust and maintainable.
+  # * Refactor rendering system to make it more robust and maintainable. (Semi-in-progress)
   class Page < Nest
     include Stevenson::Templates
     
@@ -17,23 +24,28 @@ module Stevenson
     alias       :app :application
     
     attr_writer :content, :layout # Readers already defined.
-    attr_reader :attrs, :attributes, :opts, :hooks
+    attr_reader :attrs, :opts, :hooks, :response
     
     # Pages are the fundamental part of Stevenson. Can be organized into collections for grouping purposes.
     def initialize(name, parent, app, opts)
       super(name, parent)
       
       @application = app
-      @attrs = []; @attributes = @attrs;
+      @opts = opts
+      
+      load
+    end
+    
+    def load
+      @attrs = {}
       @hooks = {
-        :after_initialize => []
+        :after_initialize => [],
+        :before_initialize => []
       }
       
+      # Layout/content specifics
       @layout = @@default_layout
       @content = nil
-      @opts = opts
-      @render_block = nil
-      
       # Inherit layout from parents.
       begin
         unless parent.layout === @@default_layout
@@ -41,25 +53,59 @@ module Stevenson
         end
       rescue NoMethodError; end
       
+      @rendered = false
+      @response = nil
+      
+      @descriptions = []
+      @actions = []
+      
       # Evaluate the contents of the page file within the scope of the page.
       eval(::File.open(path!, 'r') {|f| f.read })
+      
+      # Finally, initialize page attributes, etc.
+      describe!
     end
-    # Called by Stevenson::Application once the entire initialization block has run.
-    def post_initialize
+    
+    def describe(&block)
+      @descriptions << block
+    end
+    def describe!
+      @descriptions.each {|d| self.instance_eval &d }
+    end
+    def act(&block)
+      @actions << block
+    end
+    # Called by Stevenson::Application once all pages have been load'ed.
+    def act!
+      helpers! # Load in the helpers from the application
+      
+      hook :after_initialize
+      
+      # Perform all of the blocks in @actions.
+      @actions.each {|a| self.instance_eval &a }
+      
+      render!
+    end
+    def render!
+      @response = render(@layout, @content)
+    end
+    
+    # Evaluates all of the application helpers into the page's scope.
+    def helpers!
       @application.helpers.each do |helper|
         self.instance_eval &helper
-      end
-      
-      @hooks[:after_initialize].each {|hook| self.instance_eval &hook }
-      
-      if @render_block
-        self.instance_eval &@render_block
       end
     end
     
     #-- Hooks
-      #++ Adds a hook that is called after the initialization sequence has run (hooks are called at the end of post_initialize).
+      #++ Calls the hooks for the given name.
+      def hook(name)
+        @hooks[name].each {|hook| self.instance_eval &hook }
+      end
+      # Adds a hook that is called after the initialization sequence has run (hooks are called at the end of post_initialize).
       def after_initialize(&block)
+        warn "DEPRECATION: `after_initialize` has been deprecated; currently :after_initialize hooks will be called at the start of `act!`.\nLOCATION: #{Kernel.caller.first}"
+        
         @hooks[:after_initialize] << block
       end
     
@@ -73,6 +119,7 @@ module Stevenson
     end
     
     def page; self; end
+    def rendered?; @rendered; end
     
     # Figures out where to look for the page file.
     def path!
@@ -134,7 +181,7 @@ module Stevenson
     # Each page must ultimately respond to a call method, which returns an HTML file to be sent to the browser.
     # Layouts and other magic happen inside the page; the page can look up the tree into collections and so forth to infer which layout to use (eventually), but the rendering itself should happen in the page.
     def call
-      return @content
+      return @response
     end
     
     # Allows for easy setting or getting of an attribute.
