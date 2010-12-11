@@ -18,6 +18,10 @@ module Stevenson
         
         builder = Rack::Builder.new
         builder.use Rack::CommonLogger
+        @app.statics.each do |static|
+          #builder.use Rack::Static, :urls => ["/css", "/images"], :root => "public"
+          builder.use Rack::Static, :urls => static[:urls].collect {|p| '/' + p.to_s }, :root => static[:path].to_s
+        end
         builder.run self
         @app.opts[:handler].run(
           builder.to_app,
@@ -64,8 +68,8 @@ module Stevenson
         return response
       end
       
-      path = File.expand_path('public' + Rack::Utils.unescape(request.path_info))
-      return static!(path) if static?(path)
+      #path = File.expand_path('public' + Rack::Utils.unescape(request.path_info))
+      #return static!(path) if static?(path)
       
       return not_found
     end

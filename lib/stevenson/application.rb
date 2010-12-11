@@ -16,13 +16,16 @@ module Stevenson
     
     
     attr_reader :routes, :server, :opts
+    attr_accessor :statics
     
     # Called mainly by the Stevenson::Application.pen class method. Sets up a Stevenson application.
     def initialize(*args, &block)
+      print '- Stevenson ' + Stevenson.version + ' loading...'
       @root = @current_nest = Nest.new(:root, nil)
       @routes = {}
       @opts = {:run => true, :handler => Rack::Handler::Mongrel}
       @helpers = []
+      @statics = []
       # Keeping a list of all the applications for Stevenson::Application.rack
       @@applications << self
       
@@ -31,6 +34,7 @@ module Stevenson
         @opts = @opts.merge args.last
       end
       
+      print " done\n"
       puts '- Parsing description'
       self.instance_eval &block
       
@@ -55,15 +59,15 @@ module Stevenson
       #  ((@collections[@current_collection] ||= []) << Page.new(name, opts.merge({:collection => @current_collection}), &block)).last
       page = Page.new(name, @current_nest, self, opts)
       
+      @routes[page.route] = page
+      
+      puts '+ Page: ' + page.route
+      
       if block
         @current_nest = page
         self.instance_eval &block
         @current_nest = page.parent
       end
-      
-      @routes[page.route] = page
-      
-      puts '+ Page: ' + page.route
       
       return page
     end
@@ -77,6 +81,15 @@ module Stevenson
         return @root
       else
         raise Exception.new('Unrecognized object')
+      end
+    end
+    
+    def static(statics)
+      statics.each do |key, value|
+        unless value.is_a? Array
+          value = [value]
+        end
+        @statics << {:path => key, :urls => value}
       end
     end
     
