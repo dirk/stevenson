@@ -1,3 +1,7 @@
+require 'optparse'
+
+
+
 module Stevenson
   class Application
     # Every application starts with a call to #pen. This is where the journey begins.
@@ -18,12 +22,47 @@ module Stevenson
     attr_reader :routes, :server, :opts
     attr_accessor :statics
     
+    def parse_options!
+      @to_do = false
+      @opts = {:run => true, :handler => Rack::Handler::Mongrel, :port => 3000, :verbose => true}
+      
+      OptionParser.new do |opts|
+        opts.banner = <<HELP
+stevenson, a tool for building static sites.
+
+Available commands:
+HELP
+        
+        opts.on('-b', '--build', "Generates a static site in the output directory") do
+          @to_do = 'build'
+        end
+        
+        opts.on('-r', '-s', '--run', '--serve', '--server', 'Use a web server') do |v|
+          @to_do = 'run'
+        end
+        
+        opts.on('-s', 'Silence logging') do
+          @opts[:verbose] = false
+        end
+        
+        opts.on('--version', '-v', '-V', "Version") do |v|
+          puts "Stevenson "+Stevenson.version
+          exit 0
+        end
+        
+        #opts.on('--echo [ECHO]', "Echo") do |e|
+        #  puts e.inspect
+        #end
+      end.parse!
+    end
+    
     # Called mainly by the Stevenson::Application.pen class method. Sets up a Stevenson application.
     def initialize(*args, &block)
-      print '- Stevenson ' + Stevenson.version + ' loading...'
+      self.parse_options!
+      
+      print '- Stevenson ' + Stevenson.version + ' loading...' if opts[:verbose]
       @root = @current_nest = Nest.new(:root, nil)
       @routes = {}
-      @opts = {:run => true, :handler => Rack::Handler::Mongrel}
       @helpers = []
       @statics = []
       # Keeping a list of all the applications for Stevenson::Application.rack
@@ -34,13 +73,20 @@ module Stevenson
         @opts = @opts.merge args.last
       end
       
-      print " done\n"
-      puts '- Parsing description'
+      print " done\n" if opts[:verbose]
+      puts '- Parsing description' if opts[:verbose]
       self.instance_eval &block
       
       @current_nest.each_recursive { if self.respond_to? 'act!'.to_sym; self.act!; end }
       
-      self.run!
+      
+      if @to_do == 'build'
+        self.build!
+      elsif @to_do == 'run'
+        self.run!
+      else
+        
+      end
     end
     
     # DSL method to define a collection. Collections allow you to group Pages without providing an "index" view. If you want an "index" view, use a #page instead.
@@ -61,7 +107,7 @@ module Stevenson
       
       @routes[page.route] = page
       
-      puts '+ Page: ' + page.route
+      puts '+ Page: ' + page.route if opts[:verbose]
       
       if block
         @current_nest = page
@@ -89,7 +135,7 @@ module Stevenson
         unless value.is_a? Array
           value = [value]
         end
-        @statics << {:path => key, :urls => value}
+        @statics << {:path => key, :urls => [value].flatten}
       end
     end
     
@@ -106,6 +152,65 @@ module Stevenson
         @root.children.select {|c| c.name == method}.first
       else
         super(method, *args)
+      end
+    end
+    
+    def build!
+      puts '- Building static site' if opts[:verbose]
+      
+      puts '- Flushing old output directory' if opts[:verbose]
+      # Clean everything up
+      FileUtils.rm_rf './output'
+      FileUtils.mkdir './output'
+      
+      puts '- Writing routes' if opts[:verbose]
+      self.routes.each_pair do |path, route|
+        path = path.slice(1, path.length)
+        dir = path
+        if path == ''
+          path = 'index.html'
+        elsif path.ends_with?('/')
+          path += 'index.html'
+        else
+          path += '/index.html'
+        end
+        
+        puts "+ Directory: #{dir}" if opts[:verbose]
+        FileUtils.mkdir_p "./output/#{dir}"
+        
+        puts "+ Page: #{path}" if opts[:verbose]
+        File.open("./output/#{path}", 'w') {|f| f.write(route.call) }
+        
+        #puts route.call.inspect
+      end
+      
+      puts '- Copying static assets' if opts[:verbose]
+      self.statics.each do |static|
+        static[:urls].each do |dir|
+          orig_base = "./#{static[:path]}/#{dir}"
+          dest_base = "./output/#{dir}"
+          
+          FileUtils.mkdir_p dest_base
+          
+          directories = []; files = []
+          Dir["#{orig_base}/**/*"].each do |item|
+            if File.directory? item
+              directories << item
+            elsif File.file? item
+              files << item
+            end
+          end
+          
+          directories.each do |directory|
+            FileUtils.mkdir_p dest_base + directory.slice(orig_base.length, directory.length)
+          end
+          files.each do |file|
+            source = file
+            dest   = dest_base + file.slice(orig_base.length, file.length)
+            
+            FileUtils.cp source, dest
+          end
+        end
       end
     end
     

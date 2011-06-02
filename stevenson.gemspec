@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{stevenson}
-  s.version = "0.4.0"
+  s.version = "0.9.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Dirk Gadsden"]
-  s.date = %q{2010-12-08}
+  s.date = %q{2011-06-02}
   s.description = %q{}
   s.email = %q{dirk@esherido.com}
   s.extra_rdoc_files = [
@@ -26,31 +26,30 @@ Gem::Specification.new do |s|
     "lib/stevenson/nests/collection.rb",
     "lib/stevenson/page.rb",
     "lib/stevenson/server.rb",
+    "lib/stevenson/templates.rb",
     "stevenson.gemspec",
     "test/about.rb",
     "test/app.rb",
     "test/config.ru",
+    "test/index.erb",
+    "test/index.rb",
     "test/layouts/default.erb",
+    "test/people.erb",
+    "test/people.rb",
+    "test/people/jane.rb",
+    "test/people/jane_smith.erb",
     "test/people/john.rb",
     "test/people/john_smith.erb",
-    "test/public/barcamp.png",
-    "test/public/test.txt",
+    "test/public/images/barcamp.png",
     "test/sinatra_test_app.rb",
     "test/sinatra_test_config.ru"
   ]
   s.homepage = %q{http://github.com/dirk/stevenson}
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.3.7}
+  s.rubygems_version = %q{1.7.2}
   s.summary = %q{}
-  s.test_files = [
-    "test/about.rb",
-    "test/app.rb",
-    "test/people/john.rb",
-    "test/sinatra_test_app.rb"
-  ]
 
   if s.respond_to? :specification_version then
-    current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then

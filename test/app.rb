@@ -5,7 +5,7 @@
 require 'rubygems'
 require '../lib/stevenson'
 
-pen do
+pen :port => 4000 do
   helpers do
     def reverse_name(name)
       name.reverse
@@ -14,7 +14,7 @@ pen do
   
   root(page :index)
   
-  static :public => :images
+  static :public => [:images, :documents]
   
   page :people do
     page :john

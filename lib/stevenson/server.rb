@@ -14,7 +14,7 @@ module Stevenson
       @static_paths = []
       
       if @app.opts[:run]
-        puts "- Stevenson is writing a novel on port 3000 with ghost author #{@app.opts[:handler]}"
+        puts "- Stevenson is writing a novel on port #{@app.opts[:port]} with ghost author #{@app.opts[:handler]}"
         
         builder = Rack::Builder.new
         builder.use Rack::CommonLogger
@@ -25,7 +25,7 @@ module Stevenson
         builder.run self
         @app.opts[:handler].run(
           builder.to_app,
-          :Port => 3000
+          :Port => @app.opts[:port]
         )
         #@app.opts[:handler].run(
         #  self,
