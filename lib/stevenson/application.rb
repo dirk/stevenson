@@ -1,7 +1,5 @@
 require 'optparse'
 
-
-
 module Stevenson
   class Application
     # Every application starts with a call to #pen. This is where the journey begins.
@@ -14,7 +12,8 @@ module Stevenson
       end
       # Returns an instance of Stevenson::Application by the offset. Makes life easier with Rack. (Normally you won't need offset unless you're made multiple Stevenson instances.)
       def rack(offset = 0)
-        @@applications[offset].server
+        # @@applications[offset].server
+        @@applications[offset].run!
       end
     end
     
@@ -24,7 +23,6 @@ module Stevenson
     
     def parse_options!
       @to_do = false
-      @opts = {:run => true, :handler => Rack::Handler::Mongrel, :port => 3000, :verbose => true, :production => false}
       
       OptionParser.new do |opts|
         opts.banner = <<HELP
@@ -39,6 +37,8 @@ HELP
         
         opts.on('-r', '-s', '--run', '--serve', '--server', 'Use a web server') do |v|
           @to_do = 'run'
+          @opts[:run] = true
+          @opts[:handler] = Rack::Handler::Thin
         end
         
         opts.on('-p [PORT]', 'Port (when using web server)') do |p|
@@ -66,7 +66,14 @@ HELP
     
     # Called mainly by the Stevenson::Application.pen class method. Sets up a Stevenson application.
     def initialize(*args, &block)
-      self.parse_options!
+      @opts = {:run => false, :handler => nil, :port => 3000, :verbose => true, :production => false}
+      if args.last.is_a? Hash
+        # Default options.
+        @opts = @opts.merge args.last
+      end
+      if @to_do != false
+        self.parse_options!
+      end
       
       print '- Stevenson ' + Stevenson::VERSION + ' loading...' if opts[:verbose]
       @root = @current_nest = Nest.new(:root, nil)
@@ -77,10 +84,7 @@ HELP
       # Keeping a list of all the applications for Stevenson::Application.rack
       @@applications << self
       
-      if args.last.is_a? Hash
-        # Default options.
-        @opts = @opts.merge args.last
-      end
+      
       
       print " done\n" if opts[:verbose]
       puts '- Parsing description' if opts[:verbose]
