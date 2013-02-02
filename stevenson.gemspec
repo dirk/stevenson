@@ -20,6 +20,7 @@ Gem::Specification.new do |s|
     # "Rakefile",
     "VERSION",
     "lib/stevenson.rb",
+    "lib/stevenson/version.rb",
     "lib/stevenson/application.rb",
     "lib/stevenson/delegator.rb",
     "lib/stevenson/nest.rb",
