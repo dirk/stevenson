@@ -47,8 +47,9 @@ Gem::Specification.new do |s|
   ]
   s.require_paths = ["lib"]
   
-  s.add_dependency(%q<sinatra>, [">= 1.1.0"])
-  s.add_dependency(%q<haml>, [">= 3.0.24"])
-  s.add_dependency(%q<rack>, [">= 0"])
+  s.add_dependency('sinatra', [">= 1.1.0"])
+  s.add_dependency('haml', [">= 3.0.24"])
+  s.add_dependency('rack', [">= 0"])
+  s.add_dependency 'kramdown'
 end
 
