@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   ]
   s.files = [
     "README.textile",
-    "Rakefile",
+    # "Rakefile",
     "VERSION",
     "lib/stevenson.rb",
     "lib/stevenson/application.rb",
