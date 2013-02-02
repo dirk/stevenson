@@ -54,7 +54,7 @@ HELP
         end
         
         opts.on('--version', '-v', '-V', "Version") do |v|
-          puts "Stevenson "+Stevenson.version
+          puts "Stevenson "+Stevenson::VERSION
           exit 0
         end
         
@@ -68,7 +68,7 @@ HELP
     def initialize(*args, &block)
       self.parse_options!
       
-      print '- Stevenson ' + Stevenson.version + ' loading...' if opts[:verbose]
+      print '- Stevenson ' + Stevenson::VERSION + ' loading...' if opts[:verbose]
       @root = @current_nest = Nest.new(:root, nil)
       @base = ''
       @routes = {}

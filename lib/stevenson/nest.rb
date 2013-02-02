@@ -100,8 +100,4 @@ module Stevenson
       end
     end
   end
-  
-  module Nests
-    autoload :Collection,  "#{STEVIE}/nests/collection"
-  end
 end
