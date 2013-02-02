@@ -23,10 +23,12 @@ module Stevenson
         if format
           @format = format.to_sym
         else
-          if path =~ /haml$/
+          if path =~ /\.haml$/
             @format = :haml
-          elsif path =~ /erb$/
+          elsif path =~ /\.erb$/
             @format = :erb
+          elsif path =~ /\.md$/ or path =~ /\.markdown$/
+            @format = :markdown
           else
             @format = :html
           end
@@ -50,7 +52,8 @@ module Stevenson
       end
       def content
         #if ::File.file?(path)
-          @content ||= ::File.open(path, 'r') {|f| f.read }
+          #@content ||= ::File.open(path, 'r') {|f| f.read }
+          ::File.open(path, 'r') {|f| f.read }
         #end
       end
     end

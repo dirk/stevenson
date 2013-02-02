@@ -56,8 +56,9 @@ module Stevenson
       # Evaluate the contents of the page file within the scope of the page.
       eval(::File.open(path!, 'r') {|f| f.read })
       
-      # Finally, initialize page attributes, etc.
-      describe!
+      helpers! # Load in the helpers from the application
+      
+      describe! # Finally, initialize page attributes, etc.
     end
     
     def describe(&block)
@@ -78,8 +79,6 @@ module Stevenson
     end
     # Called by Stevenson::Application once all pages have been load'ed.
     def act!
-      helpers! # Load in the helpers from the application
-      
       hook :after_initialize
       
       # Perform all of the blocks in @actions.
@@ -88,7 +87,9 @@ module Stevenson
       render!
     end
     def render!
-      @response = render(@layout, @content)
+      r = render(@layout, @content)
+      @response = r
+      return r
     end
     
     # Evaluates all of the application helpers into the page's scope.
@@ -112,8 +113,8 @@ module Stevenson
     
     # Builds upon Stevenson::Nest; adds ability to get attributes.
     def method_missing(method, *args)
-      if @attrs.collect {|a| a.key }.include? method
-        @attrs.select {|a| a.key === method }.first.value
+      if @attrs.has_key? method.to_sym
+        @attrs[method.to_sym]
       else
         super(method, *args)
       end
@@ -137,9 +138,21 @@ module Stevenson
       @path
     end
     
+    def root
+      if @parent.nil?
+        return self
+      else
+        return @parent.root
+      end
+    end
+    
     # Calculates the request path to the page.
     def route
-      @route ||= self.url
+      if url = self.attr(:path)
+        @route = app.base+url
+      else
+        @route ||= app.base+self.url
+      end
     end
     
     # Deprecated; not sure if it's even being used.
@@ -165,6 +178,25 @@ module Stevenson
         elsif data.format == :haml
           p = sub ? Proc.new { render(sub) } : Proc.new { }
           return Haml::Engine.new(data.content).render(self, {}, &p)
+        elsif data.format == :markdown
+          if sub == nil
+            
+            #begin
+            #  _ = RDiscount
+            #rescue NameError
+            #  require 'rdiscount'
+            #end
+            #return RDiscount.new(data.content, :footnotes).to_html
+            #require 'kramdown'
+            begin
+              _ = Kramdown
+            rescue NameError
+              require 'kramdown'
+            end
+            return Kramdown::Document.new(data.content).to_html
+          else
+            raise "Can't use Markdown documents as layouts! (Need 'kramdown' gem.)"
+          end
         else
           data.content
         end
@@ -182,7 +214,8 @@ module Stevenson
     # Each page must ultimately respond to a call method, which returns an HTML file to be sent to the browser.
     # Layouts and other magic happen inside the page; the page can look up the tree into collections and so forth to infer which layout to use (eventually), but the rendering itself should happen in the page.
     def call
-      return @response
+      #return @response
+      render!
     end
     
     # Allows for easy setting or getting of an attribute.

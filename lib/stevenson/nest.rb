@@ -16,8 +16,8 @@ module Stevenson
     
     # Searches for children with a name matching the method; then falls back to throwing errors.
     def method_missing(method, *args)
-      if @children.collect {|c| c.name }.include? method
-        @children.select {|c| c.name === method }.first
+      if @children.collect {|c| c.name.to_sym }.include? method.to_sym
+        @children.select {|c| c.name.to_sym == method.to_sym }.first
       else
         super(method, *args)
       end

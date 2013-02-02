@@ -59,12 +59,19 @@ module Stevenson
     def route
       rp = request.path_info
       if rp[rp.length - 1, rp.length] == '/' and rp != '/'
-        rp = rp[0, rp.length - 1]
+        srp = rp[0, rp.length - 1]
+      else
+        srp = rp + '/'
       end
       
-      if @app.routes.keys.include? rp
-        response['Content-Type'] = 'text/html'
-        response.write @app.routes[rp].call
+      if @app.routes.keys.include?(rp) || @app.routes.keys.include?(srp)
+        p = @app.routes[rp] || @app.routes[srp]
+        if content_type = p.attr(:content_type)
+          response['Content-Type'] = content_type
+        else
+          response['Content-Type'] = 'text/html'
+        end
+        response.write p.call
         return response
       end
       

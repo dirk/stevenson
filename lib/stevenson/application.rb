@@ -24,7 +24,7 @@ module Stevenson
     
     def parse_options!
       @to_do = false
-      @opts = {:run => true, :handler => Rack::Handler::Mongrel, :port => 3000, :verbose => true}
+      @opts = {:run => true, :handler => Rack::Handler::Mongrel, :port => 3000, :verbose => true, :production => false}
       
       OptionParser.new do |opts|
         opts.banner = <<HELP
@@ -39,6 +39,14 @@ HELP
         
         opts.on('-r', '-s', '--run', '--serve', '--server', 'Use a web server') do |v|
           @to_do = 'run'
+        end
+        
+        opts.on('-p [PORT]', 'Port (when using web server)') do |p|
+          @opts[:port] = p.to_i
+        end
+        
+        opts.on('--production', 'Toggle whether or not to run in production mode (build only)') do
+          @opts[:production] = true
         end
         
         opts.on('-s', 'Silence logging') do
@@ -62,6 +70,7 @@ HELP
       
       print '- Stevenson ' + Stevenson.version + ' loading...' if opts[:verbose]
       @root = @current_nest = Nest.new(:root, nil)
+      @base = ''
       @routes = {}
       @helpers = []
       @statics = []
@@ -87,6 +96,13 @@ HELP
       else
         
       end
+    end
+    
+    def base(name = false)
+      if name
+        @base = name
+      end
+      @base
     end
     
     # DSL method to define a collection. Collections allow you to group Pages without providing an "index" view. If you want an "index" view, use a #page instead.
@@ -116,6 +132,10 @@ HELP
       end
       
       return page
+    end
+    
+    def production?
+      @opts[:production]
     end
     
     def root(p = nil)
@@ -165,18 +185,27 @@ HELP
       
       puts '- Writing routes' if opts[:verbose]
       self.routes.each_pair do |path, route|
-        path = path.slice(1, path.length)
-        dir = path
-        if path == ''
-          path = 'index.html'
-        elsif path.ends_with?('/')
-          path += 'index.html'
-        else
-          path += '/index.html'
-        end
+        dir = ''
         
-        puts "+ Directory: #{dir}" if opts[:verbose]
-        FileUtils.mkdir_p "./output/#{dir}"
+        path = path.slice(1, path.length)
+        unless route.attr(:path)
+          dir = path
+          if path == ''
+            path = 'index.html'
+          elsif path.ends_with?('/')
+            path += 'index.html'
+          else
+            path += '/index.html'
+          end
+        else
+          parts = path.split('/')
+          dir = (parts.slice(0, parts.length - 1) || []).join('/')
+        end
+          
+        if dir.length > 0
+          puts "+ Directory: #{dir}" if opts[:verbose]
+          FileUtils.mkdir_p "./output/#{dir}"
+        end
         
         puts "+ Page: #{path}" if opts[:verbose]
         File.open("./output/#{path}", 'w') {|f| f.write(route.call) }
@@ -188,7 +217,7 @@ HELP
       self.statics.each do |static|
         static[:urls].each do |dir|
           orig_base = "./#{static[:path]}/#{dir}"
-          dest_base = "./output/#{dir}"
+          dest_base = "./output#{@base}/#{dir.to_s}"
           
           FileUtils.mkdir_p dest_base
           
